@@ -15,17 +15,24 @@ public class BasicStrategy implements IAdvisor
     private final Play[][] suggestion = new Play[26][10];
     private final HashMap<Integer, Integer> findColumn = new HashMap<>();
     private final HashMap<Integer, Integer> findRow = new HashMap<>();
+    private boolean isInit = false;
+    
     
     @Override
     public Play advise(Hand myHand, Card upCard) 
     {
+        if(!isInit)
+        {
+            buildPlayArray();
+            buildColumnMap();
+            buildRowMap();
+            isInit = true;
+        }
         return getPlay(myHand, upCard);
     }
     private Play getPlay(Hand playerHand, Card dealerCard)
     {   
-        buildPlayArray();
-        buildColumnMap();
-        buildRowMap();
+
 
         int columnLocation = 99;
         if(dealerCard.isFace())
@@ -214,8 +221,6 @@ public class BasicStrategy implements IAdvisor
         for(int i = 10; i < 17; i++)
         {
             int hashValue = hashForRowMap(cardValue--, 20);
-            System.out.println("Hash in build: " + hashValue);
-            System.out.println("My i: " + i);
             findRow.put(hashValue, i);
         }
         
