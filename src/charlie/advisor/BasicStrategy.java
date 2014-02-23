@@ -17,7 +17,6 @@ public class BasicStrategy implements IAdvisor
     private final HashMap<Integer, Integer> findRow = new HashMap<>();
     private boolean isInit = false;
     
-    
     @Override
     public Play advise(Hand myHand, Card upCard) 
     {
@@ -32,40 +31,46 @@ public class BasicStrategy implements IAdvisor
     }
     private Play getPlay(Hand playerHand, Card dealerCard)
     {   
-
-
-        int columnLocation = 99;
+        int columnLocation;
+        //If the dealer is showing J,Q,K value is 10.
         if(dealerCard.isFace())
+        {
             columnLocation = 8;
+        }
         else
         {
             columnLocation = findColumn.get(dealerCard.value());
         }
-        int rowLocation = 99; // high number to determine if a row was not found
+        int rowLocation;
         int[] testForSoft = playerHand.getValues();
         //if hand is a pair we need to apply a hash for 50
         if(playerHand.isPair())
         {
             int hashValue = hashForRowMap(playerHand.getCard(0).value(), 50);
             rowLocation = findRow.get(hashValue);
+            return suggestion[rowLocation][columnLocation];
         }
         //if hand has some kind of "soft" value, we apply a hash of 20
-        else if(testForSoft[0] != testForSoft[1])
+        else if((testForSoft[0] != testForSoft[1]) && (testForSoft[0] < 11))
         {
             int hashValue = hashForRowMap(testForSoft[0], 20);
             rowLocation = findRow.get(hashValue);
-
+            Play tempPlay = suggestion[rowLocation][columnLocation];
+            //since I do not have access to the list to check size, we can
+            //just see if there is a third card...
+            if(playerHand.getCard(2) != null && tempPlay.equals(Play.DOUBLE_DOWN))
+            {
+                return Play.HIT;
+            }
+            return tempPlay;
         }
-        //just a plain old hand, get the value, find the location
+        //just a plain old hand OR soft hand is greater than a bust and we
+        //need to play it as the soft value ... IE: soft 16 hard 26.
         else
         {
-            rowLocation = findRow.get(testForSoft[1]);
+            rowLocation = findRow.get(testForSoft[0]);
+            return suggestion[rowLocation][columnLocation];
         }
-        //what did you come up with?        
-        if(rowLocation == 99 || columnLocation == 99)
-            return Play.NONE;
-             
-        return suggestion[rowLocation][columnLocation];
     }
     private void buildPlayArray()
     {
