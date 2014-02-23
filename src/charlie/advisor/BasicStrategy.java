@@ -16,7 +16,14 @@ public class BasicStrategy implements IAdvisor
     private final HashMap<Integer, Integer> findColumn = new HashMap<>();
     private final HashMap<Integer, Integer> findRow = new HashMap<>();
     private boolean isInit = false;
-    
+    /**
+     * Method returns what a player should do determined
+     * by players hand and dealers up card.
+     * Method overrides charlie.plugin.IAvisor.advise(Hand, Card)
+     * @param myHand players hand
+     * @param upCard dealers up card
+     * @return suggested play given players hand and dealers up card.
+     */
     @Override
     public Play advise(Hand myHand, Card upCard) 
     {
@@ -29,6 +36,14 @@ public class BasicStrategy implements IAdvisor
         }
         return getPlay(myHand, upCard);
     }
+    /**
+     * Method that will take in a players hand and a dealers upcard
+     * and return the suggestion based off the basic strategy card provided
+     * by Professor Coleman.
+     * @param playerHand the players hand
+     * @param dealerCard the dealers up card
+     * @return the suggested play. IE Play.HIT
+     */
     private Play getPlay(Hand playerHand, Card dealerCard)
     {   
         int columnLocation;
@@ -50,25 +65,19 @@ public class BasicStrategy implements IAdvisor
             rowLocation = findRow.get(hashValue);
             return suggestion[rowLocation][columnLocation];
         }
-        //if hand has some kind of "soft" value, we apply a hash of 20
-        else if((testForSoft[0] != testForSoft[1]) && (testForSoft[0] < 11))
+        //if hand has some kind of "soft" value, we apply a hash of 1199
+        //this should mean we are holding an Ace, any other time we use
+        //the 'hard' value as a backup from breaking the hand and should
+        //apply that values basic strategy.
+        else if(testForSoft[0] != testForSoft[1] && playerHand.size() == 2)
         {
-            int hashValue = hashForRowMap(testForSoft[0], 20);
+            int hashValue = hashForRowMap(playerHand.getValue(), 1199);
             rowLocation = findRow.get(hashValue);
-            Play tempPlay = suggestion[rowLocation][columnLocation];
-            //since I do not have access to the list to check size, we can
-            //just see if there is a third card...
-            if(playerHand.getCard(2) != null && tempPlay.equals(Play.DOUBLE_DOWN))
-            {
-                return Play.HIT;
-            }
-            return tempPlay;
+            return suggestion[rowLocation][columnLocation];
         }
-        //just a plain old hand OR soft hand is greater than a bust and we
-        //need to play it as the soft value ... IE: soft 16 hard 26.
         else
         {
-            rowLocation = findRow.get(testForSoft[0]);
+            rowLocation = findRow.get(playerHand.getValue());
             return suggestion[rowLocation][columnLocation];
         }
     }
@@ -169,6 +178,15 @@ public class BasicStrategy implements IAdvisor
         //player has 4's and dealer has 5 or 6 we split
         Arrays.fill(suggestion[23], 3, 5, Play.SPLIT);
     }
+    /**
+     * A way to fill an array where fillArray does not satisfy my requirements.
+     * @param playArray the array (2D)
+     * @param rowStart what row or y location to start at (IE: 0 means 0)
+     * @param rowEnd what row or y location to stop at at (IE: 1 means it will place value in 1)
+     * @param colStart what col or x location to start at (same as row)
+     * @param colEnd what col or x location to end at (same as row)
+     * @param play what is the play :: IE: Play.STAY
+     */
     private void fillLoop(Play[][] playArray, 
                             int rowStart, 
                             int rowEnd,
@@ -193,10 +211,23 @@ public class BasicStrategy implements IAdvisor
         }
         findColumn.put(Card.ACE, 9);
     }
+    /**
+     * A simple method to apply a "hash" or make unique keys since
+     * A players hand values have multiple meanings depending on what
+     * the hand contains ... IE 4, 4 is 8 but is a different play than
+     * 5, 3.
+     * @param valueToHash players hand value
+     * @param hash what to multiple the value by to make a unique key
+     * @return the two values multiplied together ...
+     */
     private int hashForRowMap(int valueToHash, int hash)
     {
         return (valueToHash * hash);
     }
+    /**
+     * This method builds the hashmap that will return the 'Y' location
+     * where the players hand is located.
+     */
     private void buildRowMap()
     {
         //This is ugly...I was thinking 3 maps but this just seems easier...
@@ -218,14 +249,14 @@ public class BasicStrategy implements IAdvisor
         }
         
         //rows 10 - 16 "soft values", hand's with an ACE.
-        //let us give the "soft" vaule a hash of 20
+        //let us give the "soft" vaule a hash of 1199
         //not sure how AK, AQ, and AJ work together yet ....
-        findRow.put(hashForRowMap(10,20), 10);
-        findRow.put(hashForRowMap(11,20), 10);
-        cardValue = 9;
+        findRow.put(hashForRowMap(20,1199), 10);
+        findRow.put(hashForRowMap(21,1199), 10);
+        cardValue = 19;
         for(int i = 10; i < 17; i++)
         {
-            int hashValue = hashForRowMap(cardValue--, 20);
+            int hashValue = hashForRowMap(cardValue--, 1199);
             findRow.put(hashValue, i);
         }
         
@@ -240,6 +271,10 @@ public class BasicStrategy implements IAdvisor
             findRow.put(hashForRowMap(cardValue--, 50), i);
         }
     }
+    /**
+     * This method is to test the 2D array.
+     * @param playArray the array to test
+     */
     private void printStratCard(Play[][] playArray)
     {
         for(int row = 0; row < playArray.length; row++)
