@@ -1,4 +1,5 @@
 package charlie.advisor;
+
 import charlie.card.Card;
 import charlie.card.Hand;
 import charlie.plugin.IAdvisor;
@@ -16,9 +17,11 @@ public class BasicStrategy implements IAdvisor
     private final HashMap<Integer, Integer> findColumn = new HashMap<>();
     private final HashMap<Integer, Integer> findRow = new HashMap<>();
     private boolean isInit = false;
+    
     /**
      * Method returns what a player should do determined
      * by players hand and dealers up card.
+     * 
      * Method overrides charlie.plugin.IAvisor.advise(Hand, Card)
      * @param myHand players hand
      * @param upCard dealers up card
@@ -36,10 +39,12 @@ public class BasicStrategy implements IAdvisor
         }
         return getPlay(myHand, upCard);
     }
+    
     /**
      * Method that will take in a players hand and a dealers upcard
      * and return the suggestion based off the basic strategy card provided
      * by Professor Coleman.
+     * 
      * @param playerHand the players hand
      * @param dealerCard the dealers up card
      * @return the suggested play. IE Play.HIT
