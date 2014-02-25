@@ -18,18 +18,19 @@ import charlie.card.Card.Suit;
 import charlie.card.Hand;
 import charlie.card.Hid;
 import charlie.dealer.Seat;
+import charlie.plugin.IAdvisor;
 import charlie.util.Play;
 import static org.junit.Assert.assertEquals;
 
 /**
  *
- * @author muroj
+ * @author Muroj
  */
-public class Test00_1217_26 {
+public class Test00_12_2 {
     
-    BasicStrategy advisor = null;
+    IAdvisor advisor = null;
     
-    public Test00_1217_26() {
+    public Test00_12_2() {
         advisor = new BasicStrategy();
     }
     
@@ -72,10 +73,10 @@ public class Test00_1217_26 {
     
     @Test
     public void testTwo() {
-       // Create a hand valued at 17.
+       // Create a hand valued at 12.
        Hand testHand = new Hand(new Hid(Seat.YOU));
        testHand.hit(new Card(Card.KING, Suit.CLUBS));
-       testHand.hit(new Card(7, Suit.CLUBS));
+       testHand.hit(new Card(2, Suit.CLUBS));
        
        // What does the advisor suggest?
        Play actual = advisor.advise(testHand, new Card(6, Suit.CLUBS));

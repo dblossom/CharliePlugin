@@ -3,14 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package charlie.bs.section1;
+package charlie.bs.section3;
 
 import charlie.advisor.BasicStrategy;
 import charlie.card.Card;
-import charlie.card.Card.Suit;
 import charlie.card.Hand;
 import charlie.card.Hid;
 import charlie.dealer.Seat;
+import charlie.plugin.IAdvisor;
 import charlie.util.Play;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -21,13 +21,13 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author Narsil
+ * @author Muroj
  */
-public class Test01_1217_7A {
+public class Test05_A2_7 {
 
-    BasicStrategy advisor = null;
-    
-    public Test01_1217_7A() {
+    IAdvisor advisor = null;
+
+    public Test05_A2_7() {
         advisor = new BasicStrategy();
     }
 
@@ -53,31 +53,31 @@ public class Test01_1217_7A {
     // @Test
     // public void hello() {}
     @Test
-    public void testThree() {
-        // Create a hand valued at 12.
+    public void testEleven() {
+        // Create a hand valued at 9.
         Hand testHand = new Hand(new Hid(Seat.YOU));
-        testHand.hit(new Card(Card.KING, Card.Suit.CLUBS));
-        testHand.hit(new Card(2, Card.Suit.CLUBS));
+        testHand.hit(new Card(Card.ACE, Card.Suit.CLUBS));
+        testHand.hit(new Card(7, Card.Suit.CLUBS));
 
         // What does the advisor suggest?
-        Play actual = advisor.advise(testHand, new Card(7, Suit.CLUBS));
+        Play actual = advisor.advise(testHand, new Card(7, Card.Suit.CLUBS));
         // What _should_ the advisor suggest?
-        Play expected = Play.HIT;
+        Play expected = Play.STAY;
         // Verify that the actual value equals the expected value.
         assertEquals("Fail", expected, actual);
     }
 
     @Test
-    public void testFour() {
-        // Create a hand valued at 17.
+    public void testTwelve() {
+        // Create a hand valued at 9.
         Hand testHand = new Hand(new Hid(Seat.YOU));
-        testHand.hit(new Card(Card.KING, Card.Suit.CLUBS));
+        testHand.hit(new Card(Card.ACE, Card.Suit.CLUBS));
         testHand.hit(new Card(7, Card.Suit.CLUBS));
 
         // What does the advisor suggest?
-        Play actual = advisor.advise(testHand, new Card(Card.ACE, Suit.SPADES));
+        Play actual = advisor.advise(testHand, new Card(Card.ACE, Card.Suit.CLUBS));
         // What _should_ the advisor suggest?
-        Play expected = Play.STAY;
+        Play expected = Play.HIT;
         // Verify that the actual value equals the expected value.
         assertEquals("Fail", expected, actual);
     }

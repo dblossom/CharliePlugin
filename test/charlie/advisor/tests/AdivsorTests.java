@@ -23,10 +23,10 @@ import charlie.bs.section4.*;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    Test00_1217_26.class, Test01_1217_7A.class,
-    Test02_511_26.class, Test03_511_7A.class,
-    Test04_A210_26.class, Test05_A210_7A.class,
-    Test06_22AA_26.class, Test07_22AA_7A.class
+    Test00_12_2.class, Test01_12_7.class,
+    Test02_5_2.class, Test03_5_7.class,
+    Test04_A2_2.class, Test05_A2_7.class,
+    Test06_22_2.class, Test07_22_7.class
 })
 
 public class AdivsorTests {
