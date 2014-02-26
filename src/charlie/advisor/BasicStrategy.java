@@ -8,7 +8,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 /**
- * TODO: Add class description.
+ * A class that will provide a player with a suggested
+ * play dependent upon the players hand and the dealers
+ * up card. This class implements IAdvisor and overrides
+ * the advice(Hand, Card) method.
  * @author Dan Blossom, Mohamad Ali, Joe Muro
  */
 public class BasicStrategy implements IAdvisor
