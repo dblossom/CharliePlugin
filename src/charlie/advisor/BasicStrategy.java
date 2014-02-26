@@ -14,8 +14,7 @@ import java.util.HashMap;
  * the advice(Hand, Card) method.
  * @author Dan Blossom, Mohammed Ali, Joe Muro
  */
-public class BasicStrategy implements IAdvisor
-{
+public class BasicStrategy implements IAdvisor{
     private final Play[][] suggestion = new Play[26][10];
     private final HashMap<Integer, Integer> findColumn = new HashMap<>();
     private final HashMap<Integer, Integer> findRow = new HashMap<>();
@@ -31,10 +30,8 @@ public class BasicStrategy implements IAdvisor
      * @return suggested play given players hand and dealers up card.
      */
     @Override
-    public Play advise(Hand myHand, Card upCard) 
-    {
-        if(!isInit)
-        {
+    public Play advise(Hand myHand, Card upCard){
+        if(!isInit){
             buildPlayArray();
             buildColumnMap();
             buildRowMap();
@@ -52,23 +49,18 @@ public class BasicStrategy implements IAdvisor
      * @param dealerCard the dealers up card
      * @return the suggested play. IE Play.HIT
      */
-    private Play getPlay(Hand playerHand, Card dealerCard)
-    {   
+    private Play getPlay(Hand playerHand, Card dealerCard){   
         int columnLocation;
         //If the dealer is showing J,Q,K value is 10.
-        if(dealerCard.isFace())
-        {
+        if(dealerCard.isFace()){
             columnLocation = 8;
-        }
-        else
-        {
+        }else{
             columnLocation = findColumn.get(dealerCard.value());
         }
         int rowLocation;
         int[] testForSoft = playerHand.getValues();
         //if hand is a pair we need to apply a hash for 50
-        if(playerHand.isPair())
-        {
+        if(playerHand.isPair()){
             int hashValue = hashForRowMap(playerHand.getCard(0).value(), 50);
             rowLocation = findRow.get(hashValue);
             return suggestion[rowLocation][columnLocation];
@@ -77,20 +69,16 @@ public class BasicStrategy implements IAdvisor
         //this should mean we are holding an Ace, any other time we use
         //the 'hard' value as a backup from breaking the hand and should
         //apply that values basic strategy.
-        else if(testForSoft[0] != testForSoft[1] && playerHand.size() == 2)
-        {
+        else if(testForSoft[0] != testForSoft[1] && playerHand.size() == 2){
             int hashValue = hashForRowMap(playerHand.getValue(), 1199);
             rowLocation = findRow.get(hashValue);
             return suggestion[rowLocation][columnLocation];
-        }
-        else
-        {
+        }else{
             rowLocation = findRow.get(playerHand.getValue());
             return suggestion[rowLocation][columnLocation];
         }
     }
-    private void buildPlayArray()
-    {
+    private void buildPlayArray(){
         //ROW 0
         //17+ is always stay
         Arrays.fill(suggestion[0], Play.STAY);
@@ -200,21 +188,17 @@ public class BasicStrategy implements IAdvisor
                             int rowEnd,
                             int colStart,
                             int colEnd,
-                            Play play)
-    {
-        while(rowStart < (rowEnd + 1))
-        {
+                            Play play){
+        while(rowStart < (rowEnd + 1)){
             for(int i = colStart; i < (colEnd + 1); i++)
                 suggestion[rowStart][i] = play;
             rowStart++;
         }
     }
     
-    private void buildColumnMap()
-    {
+    private void buildColumnMap(){
         int cardValue = 2; // lowest card
-        for(int i = 0; i < 9; i++)
-        {
+        for(int i = 0; i < 9; i++){
             findColumn.put(cardValue++, i);
         }
         findColumn.put(Card.ACE, 9);
@@ -228,16 +212,14 @@ public class BasicStrategy implements IAdvisor
      * @param hash what to multiple the value by to make a unique key
      * @return the two values multiplied together ...
      */
-    private int hashForRowMap(int valueToHash, int hash)
-    {
+    private int hashForRowMap(int valueToHash, int hash){
         return (valueToHash * hash);
     }
     /**
      * This method builds the hashmap that will return the 'Y' location
      * where the players hand is located.
      */
-    private void buildRowMap()
-    {
+    private void buildRowMap(){
         //This is ugly...I was thinking 3 maps but this just seems easier...
         //Rather then doing 3 if statements to find the quad where the 
         //players had will fall...
@@ -251,8 +233,7 @@ public class BasicStrategy implements IAdvisor
         findRow.put(6,9);
         findRow.put(7,9);
         int cardValue = 17;
-        for(int i = 0; i < 10; i++)
-        {
+        for(int i = 0; i < 10; i++){
             findRow.put(cardValue--, i);
         }
         
@@ -262,8 +243,7 @@ public class BasicStrategy implements IAdvisor
         findRow.put(hashForRowMap(20,1199), 10);
         findRow.put(hashForRowMap(21,1199), 10);
         cardValue = 19;
-        for(int i = 10; i < 17; i++)
-        {
+        for(int i = 10; i < 17; i++){
             int hashValue = hashForRowMap(cardValue--, 1199);
             findRow.put(hashValue, i);
         }
@@ -272,38 +252,10 @@ public class BasicStrategy implements IAdvisor
         findRow.put(hashForRowMap(1, 50), 17);
         findRow.put(hashForRowMap(8, 50), 17);
         cardValue = 10;
-        for(int i = 18; i < 25; i++)
-        {
+        for(int i = 18; i < 25; i++){
             if(cardValue == 8)
                 cardValue = 7;
             findRow.put(hashForRowMap(cardValue--, 50), i);
         }
-    }
-    /**
-     * This method is to test the 2D array.
-     * @param playArray the array to test
-     */
-    private void printStratCard(Play[][] playArray)
-    {
-        for(int row = 0; row < playArray.length; row++)
-        {
-            if(row < 10)
-                System.out.print("0" + row + ": ");
-            else
-                System.out.print(row + ": ");
-            for (Play play : playArray[row]) {
-                if(play == Play.SPLIT)
-                {
-                    System.out.print(" P");
-                }
-                else
-                {
-                    char playChar = play.toString().charAt(0);
-                    System.out.print(" " + playChar);
-                }
-            }
-            System.out.println();
-        }
-        System.out.println("Hit = H; Stand = S; Double Down = D; Splt = P");
     }
 }
