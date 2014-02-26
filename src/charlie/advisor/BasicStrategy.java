@@ -12,7 +12,7 @@ import java.util.HashMap;
  * play dependent upon the players hand and the dealers
  * up card. This class implements IAdvisor and overrides
  * the advice(Hand, Card) method.
- * @author Dan Blossom, Mohamad Ali, Joe Muro
+ * @author Dan Blossom, Mohammed Ali, Joe Muro
  */
 public class BasicStrategy implements IAdvisor
 {
