@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package charlie.bs.section1;
 
 import charlie.advisor.BasicStrategy;
@@ -21,8 +17,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- *
- * @author Muroj
+ * @author Joe
  */
 public class Test01_12_7 {
 
@@ -48,11 +43,6 @@ public class Test01_12_7 {
     public void tearDown() {
     }
 
-    // TODO add test methods here.
-    // The methods must be annotated with annotation @Test. For example:
-    //
-    // @Test
-    // public void hello() {}
     @Test
     public void testThree() {
         // Create a hand valued at 12.

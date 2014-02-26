@@ -1,7 +1,5 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Contains the test suite for the IAdvisor CharliePlugin.
  */
 package charlie.advisor.tests;
 
@@ -18,8 +16,7 @@ import charlie.bs.section3.*;
 import charlie.bs.section4.*;
 
 /**
- *
- * @author Narsil
+ * @author Joe
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -29,7 +26,7 @@ import charlie.bs.section4.*;
     Test06_22_2.class, Test07_22_7.class
 })
 
-public class AdivsorTests {
+public class AdvisorTests {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
