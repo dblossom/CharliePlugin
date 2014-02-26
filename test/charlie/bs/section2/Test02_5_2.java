@@ -15,31 +15,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- * @author Joe Muro
- */
 public class Test02_5_2 {
 
     IAdvisor advisor = null;
 
     public Test02_5_2() {
         advisor = new BasicStrategy();
-    }
-
-    @BeforeClass
-    public static void setUpClass() {
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
     }
 
     @Test
