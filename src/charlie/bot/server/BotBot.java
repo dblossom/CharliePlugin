@@ -1,35 +1,25 @@
 package charlie.bot.server;
-import charlie.actor.Courier;
 import charlie.advisor.BasicStrategy;
 import charlie.card.Card;
-import charlie.card.Card.Suit;
 import charlie.card.Hand;
 import charlie.card.Hid;
 import charlie.dealer.Dealer;
 import charlie.dealer.Seat;
-import charlie.message.view.to.Deal;
 import charlie.plugin.IBot;
 import charlie.util.Play;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 
 /**
- *
- * @author blossom
+ * This class implements a bot
+ * @author D. Blossom, M. Ali, J. Muro
  */
 public class BotBot implements IBot, Runnable{
 
     private Dealer dealer;
     private Hand hand;
     private Hid hid;
-    private List<Hid> hList;
-    private int sSize;
     private Card upCard;
-    
+    static int deal_count = 0;
     
     @Override
     public Hand getHand(){
@@ -45,26 +35,34 @@ public class BotBot implements IBot, Runnable{
     public void sit(Seat seat) {
         hand = new Hand(new Hid(seat));
         hid = new Hid(hand.getHid());
-        hid.setAmt(10.0);
+        hid.setAmt(5.0);
     }
 
     @Override
     public void startGame(List<Hid> hids, int shoeSize) {
-        this.hList = new ArrayList<>(hids);
-        this.sSize = shoeSize;
+        
     }
 
     @Override
     public void endGame(int shoeSize) {
-        sSize = shoeSize;
+        
     }
 
     @Override
     public void deal(Hid hid, Card card, int[] values) {
+        System.out.println("********** START **********");
+        System.out.println("deal(hid, card, int[]) call #: " + (++deal_count));
+        if(card != null)
+            System.out.println("The card is: " + card.toString());
+        System.out.println("The seat for this call: " + hid.getSeat());
+        System.out.println("**********  END  **********");
+
+        //we want the dealers card for checking the strategy...
+        //this seems like a bit of a hack
         if(Seat.DEALER == hid.getSeat()){
+            Hand h = new Hand(hid);
             if(card != null)
                 upCard = new Card(card);
-            //upCard = new Card(5, Suit.DIAMONDS);
         }
     }
 
@@ -75,7 +73,7 @@ public class BotBot implements IBot, Runnable{
 
     @Override
     public void bust(Hid hid) {
-        
+
     }
     
     @Override
@@ -118,22 +116,45 @@ public class BotBot implements IBot, Runnable{
     @Override
     public void run() {
         synchronized(dealer){
-            Responder r = new Responder(hand, upCard, dealer);
-            Play bs = r.getPlay();
-            while(bs != Play.STAY){
-                if(bs == Play.DOUBLE_DOWN && hand.size() == 2)
+            Play bs = getPlay(hand, upCard);
+            while(hand.getValue() < 21 && bs != Play.STAY){
+//                try {
+//                    Thread.sleep(2000);
+//                } catch (InterruptedException ex) {
+//                    Logger.getLogger(BotBot.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+                if(bs == Play.DOUBLE_DOWN && hand.size() == 2){
+                    hid.dubble();
                     dealer.doubleDown(this, this.hid);
+                    System.out.println("BET AMT: " + hid.getAmt());
+                }
                 if(bs == Play.HIT)
                     dealer.hit(this, this.hid);
-                if(bs == Play.SPLIT)
-                    dealer.hit(this, this.hid);
+                if(bs == Play.SPLIT){
+                    //split not implemented
+                    //might have to refactor Basic Strat
+                    dealer.stay(this, this.hid);
+                }
                 if(bs == Play.DOUBLE_DOWN && hand.size() != 2)
                     dealer.hit(this, this.hid);
-                if(bs == null)
+                if(bs == Play.STAY)
                     dealer.stay(this, this.hid);
-                bs = r.getPlay();
+                if(bs == null)
+                    dealer.stay(this, this.hid); 
+                if(hand.getValue() < 22)
+                    bs = getPlay(hand, upCard);
             }
-            dealer.stay(this, this.hid);
+            //I think this stay is causing "invalid stay" errors
+            //My guess is because we already "stayed, but now calling it again?"
+            //So, how else do we notify the dealer we are done?
+            //I think we need to implement the Request methods (Bust, Win, etc)
+            //However, those classes do not seem to be useful ...
+            System.out.println("Just before 'Stay(IPlayer, Hid)' after loop...");
+            dealer.stay(this,this.hid);
         }
+    }
+    private Play getPlay(Hand hand, Card upCard){
+        BasicStrategy bs = new BasicStrategy();
+        return bs.advise(hand, upCard);
     }
 }    
