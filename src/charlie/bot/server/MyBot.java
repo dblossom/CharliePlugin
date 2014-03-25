@@ -95,6 +95,7 @@ public class MyBot implements IBot {
             upCard = card;
         }
         
+        // If this deal is to us and it is currently our turn...
         if (hid.getSeat() == mySeat && myTurn && !myHand.isBroke() &&
                 !myHand.isCharlie() && !myHand.isBlackjack()) {
             new Thread(
@@ -144,14 +145,17 @@ public class MyBot implements IBot {
 
     @Override
     public void play(Hid hid) {
-
+        
+        // Check if it is our turn.
         if (hid.getSeat() == mySeat) {
             myTurn = true;
             // Make the move by spawning a new thread.
             new Thread(
                     new Middleman(myDealer, this, upCard)).start();
         } else {
+            // Check if our turn is over.
             if (myTurn) {
+                // Indicate that our turn is over.
                 myTurn = !myTurn;
             }
         }
@@ -170,7 +174,7 @@ public class MyBot implements IBot {
         private final Dealer dealer;
 
         /**
-         *
+         * A reference to the dealer's upcard
          */
         private final Card upCard;
 
@@ -178,6 +182,8 @@ public class MyBot implements IBot {
          * The Advisor is used to determine which play to make.
          */
         private final IAdvisor advisor = new BasicStrategy();
+        
+        private static final int WAIT_TIME = 2000;
 
         public Middleman(Dealer d, MyBot b, Card c) {
             dealer = d;
@@ -191,7 +197,7 @@ public class MyBot implements IBot {
             Play advice = advisor.advise(player.getHand(), upCard);
 
             try {
-                Thread.sleep(2000);
+                Thread.sleep(WAIT_TIME);
             } catch (InterruptedException ex) {
                 Logger.getLogger(MyBot.class.getName()).log(Level.SEVERE, null, ex);
             }
