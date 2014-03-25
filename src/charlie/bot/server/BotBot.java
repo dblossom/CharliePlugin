@@ -1,6 +1,5 @@
 package charlie.bot.server;
 
-import charlie.actor.Courier;
 import charlie.advisor.BasicStrategy;
 import charlie.card.Card;
 import charlie.card.Hand;
@@ -15,7 +14,9 @@ import java.util.List;
 //remove if not needed, or move to import lise if they are
 //just easier to delete 
 import java.util.ArrayList;
-import charlie.message.view.to.Bust;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class implements a bot
@@ -96,6 +97,9 @@ public class BotBot implements IBot, Runnable{
             if(card != null)
                 upCard = new Card(card);
         }
+        if(hid.getSeat() == this.hid.getSeat()){
+            //nothing
+        }
     }
 
     @Override
@@ -159,47 +163,93 @@ public class BotBot implements IBot, Runnable{
 
     @Override
     public void run() {
-        synchronized(dealer){
-            Play bs = getPlay(hand, upCard);
-            while(hand.getValue() < 21 && bs != Play.STAY){
-//                try {
-//                    Thread.sleep(2000);
-//                } catch (InterruptedException ex) {
-//                    Logger.getLogger(BotBot.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-                if(bs == Play.DOUBLE_DOWN && hand.size() == 2){
-                    hid.dubble();
-                    dealer.doubleDown(this, this.hid);
-                    System.out.println("BET AMT: " + hid.getAmt());
-                }
-                if(bs == Play.HIT)
-                    dealer.hit(this, this.hid);
-                if(bs == Play.SPLIT){
-                    //split not implemented
-                    //might have to refactor Basic Strat
-                    //just stay I guess for now ... ? 
-                    //I mean 9,9 is 18 -> do not want to split that
-                    //however 4,4 is 8 -> prob want to hit that ...
-                    dealer.stay(this, this.hid);
-                }
-                if(bs == Play.DOUBLE_DOWN && hand.size() != 2)
-                    dealer.hit(this, this.hid);
-                if(bs == Play.STAY)
-                    dealer.stay(this, this.hid);
-                if(bs == null)
-                    dealer.stay(this, this.hid); 
-                if(hand.getValue() < 22)
-                    bs = getPlay(hand, upCard);
+                
+        synchronized(this){
+                        
+            Play suggestion = getPlay(hand, upCard);
+            
+            if(suggestion == Play.SPLIT){
+                System.out.println("SPLIT");
+                suggestion = splitAltPlay(hand, upCard);
             }
-            //I think this stay is causing "invalid stay" errors
-            //My guess is because we already "stayed, but now calling it again?"
-            //So, how else do we notify the dealer we are done?
-            //I think we need to implement the Request methods (Bust, Win, etc)
-            //However, those classes do not seem to be useful ...
-            System.out.println("Just before 'Stay(IPlayer, Hid)' after loop...");
-            dealer.stay(this,this.hid);
+            
+            while(suggestion == Play.HIT || 
+                 (suggestion == Play.DOUBLE_DOWN && hand.size() != 2)){
+                
+                System.out.println("HIT / DOUBLE LOOP");
+                dealer.hit(this, this.hid);
+                suggestion = getPlay(hand, upCard);
+                
+                if(hand.getValue() == 21 || hand.isBroke())
+                    return;
+
+            }
+            
+            if(suggestion == Play.DOUBLE_DOWN && hand.size() == 2){
+                System.out.println("DOUBLE");
+                hid.dubble();
+                dealer.doubleDown(this, this.hid);
+                return;
+            }
+            
+            if(suggestion == Play.STAY){
+                System.out.println("STAY");
+                dealer.stay(this, this.hid);
+            }
         }
     }
+    
+    private Play splitAltPlay(Hand hand, Card upCard){
+        
+        //how did we even get in here?
+        if(!hand.isPair())
+            return Play.NONE;
+        
+        //pair of 2, 3, 4. Value equivalent is hit
+        if(((hand.getValue() == 4)
+        ||  (hand.getValue() == 6)
+        ||  (hand.getValue() == 8))){
+            
+            return Play.HIT;
+        }
+        
+        //pair of 5's
+        if(hand.getValue() == 10){
+            //nothing changes
+            return getPlay(hand, upCard);
+        }
+        
+        //pair of 6's or A's ( 11 + 1 )
+        if(hand.getValue() == 12 || hand.getCard(0).isAce()){
+            
+            if(upCard.value() == 2 || upCard.value() == 3)
+                return Play.HIT;
+            if(upCard.value() > 3 && upCard.value() < 7)
+                return Play.STAY;
+            
+            return Play.HIT;
+        }
+        
+        //pair of 7's or 8's
+        if(hand.getValue() == 14 || hand.getValue() == 16){
+            
+            if(upCard.value() < 7){
+                return Play.STAY;
+            }
+            
+            return Play.HIT;
+        }
+        
+        //pair of 10's and anything larger than 16
+        if(hand.getValue() > 16 && hand.getValue() < 22){
+            return Play.STAY;
+        }
+        
+        //should never be called
+        return Play.NONE;
+        
+    }
+    
     private Play getPlay(Hand hand, Card upCard){
         BasicStrategy bs = new BasicStrategy();
         return bs.advise(hand, upCard);
