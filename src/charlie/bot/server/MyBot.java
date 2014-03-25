@@ -51,7 +51,7 @@ public class MyBot implements IBot {
     /**
      *
      */
-    final static Object monitor = new Object();
+    final Object monitor = new Object();
 
     private static final Logger log = Logger.getLogger(MyBot.class.getName());
 
@@ -95,8 +95,10 @@ public class MyBot implements IBot {
             upCard = card;
         }
         
-        if (hid.getSeat() == mySeat) {
-            myTurn = false;
+        if (hid.getSeat() == mySeat && myTurn && !myHand.isBroke() &&
+                !myHand.isCharlie() && !myHand.isBlackjack()) {
+            new Thread(
+                    new Middleman(myDealer, this, upCard)).start();
         }
     }
 
@@ -107,9 +109,7 @@ public class MyBot implements IBot {
 
     @Override
     public void bust(Hid hid) {
-        if (hid.getSeat() == mySeat) {
-            myTurn = false;
-        }
+        
     }
 
     @Override
@@ -119,16 +119,12 @@ public class MyBot implements IBot {
 
     @Override
     public void blackjack(Hid hid) {
-        if (hid.getSeat() == mySeat) {
-            myTurn = false;
-        }
+        
     }
 
     @Override
     public void charlie(Hid hid) {
-        if (hid.getSeat() == mySeat) {
-            myTurn = false;
-        }
+        
     }
 
     @Override
@@ -151,61 +147,68 @@ public class MyBot implements IBot {
 
         if (hid.getSeat() == mySeat) {
             myTurn = true;
-
-            while (myTurn && !myHand.isBroke()) {
-                // Make the move by spawning a new thread.
-                new Thread(
-                        new Middleman(myDealer, this, upCard)).start();
+            // Make the move by spawning a new thread.
+            new Thread(
+                    new Middleman(myDealer, this, upCard)).start();
+        } else {
+            if (myTurn) {
+                myTurn = !myTurn;
             }
         }
     }
-}
 
-class Middleman implements Runnable {
+    class Middleman implements Runnable {
 
-    /**
-     * The Bot this Middleman is making moves on behalf of.
-     */
-    private final MyBot player;
+        /**
+         * The Bot this Middleman is making moves on behalf of.
+         */
+        private final MyBot player;
 
-    /**
-     * The dealer for this Middleman's Bot.
-     */
-    private final Dealer dealer; 
+        /**
+         * The dealer for this Middleman's Bot.
+         */
+        private final Dealer dealer;
 
-    /**
-     *
-     */
-    private final Card upCard;
-    
-    /**
-     * The Advisor is used to determine which play to make.
-     */
-    private final IAdvisor advisor = new BasicStrategy();
+        /**
+         *
+         */
+        private final Card upCard;
 
-    public Middleman(Dealer d, MyBot b, Card c) {
-        dealer = d;
-        player = b;
-        upCard = c;
-    }
+        /**
+         * The Advisor is used to determine which play to make.
+         */
+        private final IAdvisor advisor = new BasicStrategy();
 
-    @Override
-    public void run() {
+        public Middleman(Dealer d, MyBot b, Card c) {
+            dealer = d;
+            player = b;
+            upCard = c;
+        }
 
-        Play advice = advisor.advise(player.getHand(), upCard);
-        
-        switch (advice) {
-            case DOUBLE_DOWN:
-            // Not implemented, so fall through to STAY.
-            case HIT:
-                dealer.hit(player, player.getHand().getHid());
-                break;
-            case SPLIT:
-            // Not implemented, so fall through to STAY.
-            case STAY:
-                player.myTurn = false;
-                dealer.stay(player, player.getHand().getHid());
-                break;
+        @Override
+        public void run() {
+
+            Play advice = advisor.advise(player.getHand(), upCard);
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(MyBot.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            switch (advice) {
+                case DOUBLE_DOWN:
+                // Not implemented, so fall through to STAY.
+                case HIT:
+                    dealer.hit(player, player.getHand().getHid());
+                    break;
+                case SPLIT:
+                // Not implemented, so fall through to STAY.
+                case STAY:
+                    dealer.stay(player, player.getHand().getHid());
+                    break;
+            }
         }
     }
+
 }

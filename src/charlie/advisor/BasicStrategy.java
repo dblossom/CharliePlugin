@@ -113,7 +113,7 @@ public class BasicStrategy implements IAdvisor {
         if (rank >= 2 && rank <= 7) { // Ace paired with a two up to a seven.
             return ACE_STRATEGY[rank - 2][column];
         } else { // Ace paired with an eight, nine, or ten.
-            return ACE_STRATEGY[7][column];
+            return ACE_STRATEGY[6][column];
         }
     }
 
