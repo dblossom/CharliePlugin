@@ -105,7 +105,7 @@ public class SideBetRule implements ISideBetRule {
      * @return
      */
     private boolean isSuper7(Hand hand) {
-        return hand.getCard(0).getRank() == 7;
+        return hand.getCard(0).value() == 7;
     }
 
     /**
@@ -139,8 +139,8 @@ public class SideBetRule implements ISideBetRule {
      * @return
      */
     private boolean isExactly13(Hand hand) {
-        int card_1 = hand.getCard(0).getRank();
-        int card_2 = hand.getCard(1).getRank();
+        int card_1 = hand.getCard(0).value();
+        int card_2 = hand.getCard(1).value();
         
         return (card_1 + card_2 == 13);
     }
