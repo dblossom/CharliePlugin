@@ -28,9 +28,7 @@ import charlie.audio.SoundFactory;
 import charlie.card.Hid;
 import charlie.plugin.ISideBetView;
 import charlie.view.AMoneyManager;
-import static charlie.view.sprite.AtStakeSprite.DIAMETER;
 import charlie.view.sprite.Chip;
-
 import charlie.view.sprite.ChipButton;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -38,7 +36,6 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -71,12 +68,25 @@ public class SideBetView implements ISideBetView {
     protected List<ChipButton> buttons;
     protected int amt = 0;
     protected AMoneyManager moneyManager;
-    
-    //added stuff
+
+    //Array list of chips that are used for side bets
     protected List<Chip> chips = new ArrayList<>();
+    
+    //the images used for the side bets
     public final static String FIVE = "./images/chip-5-1.png";
     public final static String TWENTYFIVE = "./images/chip-25-1.png";
     public final static String HUNDRED = "./images/chip-100-1.png";
+    
+    //for the payout info that is placed on table
+    protected final String SUPER = "Super 7       pays    3:1";
+    protected final String EXACTLY = "Exactly 13    pays  10:1";
+    protected final String ROYAL = "Royal Match pays  25:1";
+    
+    //if game is over or not - start with not
+    private boolean gameOver = false;
+    
+    //the bet if taken + for win - for lose
+    double bet = 0.0;
     
     public SideBetView() {
         LOG.info("side bet view constructed");
@@ -107,7 +117,8 @@ public class SideBetView implements ISideBetView {
                 amt += button.getAmt();
                 LOG.info("A. side bet amount "+button.getAmt()+" updated new amt = "+amt);
                 
-                //Added
+                //This block of code will randomly place a chip on the table
+                //just to the right of the side bet circle
                 int n = chips.size();
                 int xStart = (X-DIAMETER/2) + 60;
                 int yStart = (Y-DIAMETER/2);
@@ -117,7 +128,7 @@ public class SideBetView implements ISideBetView {
                 int placeY = yStart + ran.nextInt(5)-5;
                 Chip chip = new Chip(img, placeX, placeY, button.getAmt());
                 chips.add(chip);
-                //end added
+                //block end
             } 
         }
         
@@ -136,16 +147,20 @@ public class SideBetView implements ISideBetView {
      */
     @Override
     public void ending(Hid hid) {
-        double bet = hid.getSideAmt();
+        
+        //set gameover flag to true so we can render win or lose label
+        gameOver = true;
+        
+        bet = hid.getSideAmt();
         
         if(bet == 0)
-            return;
-
+            return;		
+        
         LOG.info("side bet outcome = "+bet);
         
         // Update the bankroll
         moneyManager.increase(bet);
-        
+ 
         LOG.info("new bankroll = "+moneyManager.getBankroll());
     }
 
@@ -154,6 +169,8 @@ public class SideBetView implements ISideBetView {
      */
     @Override
     public void starting() {
+        //reset the gameover flag to remove label
+        gameOver = false;
     }
 
     /**
@@ -162,6 +179,7 @@ public class SideBetView implements ISideBetView {
      */
     @Override
     public Integer getAmt() {
+        //the amt being bet by the player
         return amt;
     }
 
@@ -187,9 +205,9 @@ public class SideBetView implements ISideBetView {
         Font ruleFont = new Font("Ariel", Font.PLAIN, 11);
         g.setColor(Color.YELLOW);
         g.setFont(ruleFont);
-        g.drawString("Super Seven: 3:1", X+33, Y-12);
-        g.drawString("Exactly 13:      10:1", X+33, Y);
-        g.drawString("Royal Match:  25:1", X+33, Y+12);
+        g.drawString(SUPER, X+33, Y-12);
+        g.drawString(EXACTLY, X+33, Y);
+        g.drawString(ROYAL, X+33, Y+12);
 
         // Draw the at-stake amount
         FontMetrics fm = g.getFontMetrics(font);
@@ -204,6 +222,20 @@ public class SideBetView implements ISideBetView {
             chip.render(g);
         }
         
+        //a simple "win" or "lose" or blank if no bet was taken
+        //if we want to say what we won IE: WIN Super 7
+        //all se need to do is something like ....
+        
+        //Double d = (bet / amt);
+        
+        //that should return a double 3, 10, or 25
+        //which we can use to determine what was won.
+        if(gameOver){
+            if(bet > 0)
+                drawWin(g);
+            if(bet < 0)
+                drawLose(g);
+        }
     }
     
     private boolean inRange(int x, int y) {
@@ -213,6 +245,40 @@ public class SideBetView implements ISideBetView {
         
         //if we are within the oval return true. Formula from AtStakeSprite
         return (x > xStart && x < xStart+DIAMETER && y > yStart && y < yStart+DIAMETER);
+    }
+
+    /**
+     * Renders the WIN text on the table
+     *
+     * @param name, the text to render
+     * @param g
+     */
+    private void drawWin(Graphics2D g) {
+
+        Font result = new Font("Ariel", Font.BOLD, 20);
+        g.setFont(result);
+        g.setColor(Color.GREEN);
+        //g.fillRoundRect(X + 60, Y - 20, 45, 25,15,15);
+        g.fillRect(X + 60, Y - 20, 45, 25);
+        g.setColor(Color.BLACK);
+        g.drawString("WIN!", X + 62, Y);
+    }
+
+    /**
+     * Renders the Loose text on the table
+     *
+     * @param name, the text to render
+     * @param g^
+     */
+    private void drawLose(Graphics2D g) {
+        Font result = new Font("Ariel", Font.BOLD, 20);
+        g.setFont(result);
+        g.setColor(Color.RED);
+        //g.fillRoundRect(X + 60, Y - 20, 60, 25,15,15);
+        g.drawRect(X + 60, Y - 20, 45, 25);
+        g.fillRect(X + 60, Y - 20, 60, 25);
+        g.setColor(Color.WHITE);
+        g.drawString("LOSE!", X + 60, Y);
     }
     
     private Image getChipImage(int chipAmt){
