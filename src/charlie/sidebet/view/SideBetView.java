@@ -222,14 +222,9 @@ public class SideBetView implements ISideBetView {
             chip.render(g);
         }
         
-        //a simple "win" or "lose" or blank if no bet was taken
-        //if we want to say what we won IE: WIN Super 7
-        //all se need to do is something like ....
-        
-        //Double d = (bet / amt);
-        
-        //that should return a double 3, 10, or 25
-        //which we can use to determine what was won.
+        //if game over flag is set we will
+        //paint resulting labels if sidebet
+        //was made.
         if(gameOver){
             if(bet > 0)
                 drawResult("WIN!", g);
@@ -249,22 +244,22 @@ public class SideBetView implements ISideBetView {
 
     private void drawResult(String name, Graphics2D g) {
 
-		String s7 = "SUPER 7", rm = "ROYAL MATCH", ex = "EXACTLY 13";
+        String s7 = "SUPER 7", rm = "ROYAL MATCH", ex = "EXACTLY 13";
 
-        Font result = new Font("Ariel", Font.BOLD, 20);
+        Font result = new Font("Ariel", Font.BOLD, 18);
 
         if (name.equals("LOSE!")) {
             //Draw LOSE
             g.setFont(result);
             g.setColor(Color.RED);
-            g.fill3DRect(X + 60, Y - 20, 62, 25, true);
+            g.fill3DRect(X + 65, Y - 20, 62, 25, true);
             g.setColor(Color.WHITE);
             g.drawString(name, X + 61, Y);
         } else {
             //Draw WIN
             g.setFont(result);
             g.setColor(Color.GREEN);
-            g.fill3DRect(X + 59, Y - 20, 46, 25, true);
+            g.fill3DRect(X + 58, Y - 20, 60, 25, true);
             g.setColor(Color.BLACK);
             g.drawString(name, X + 60, Y);
 
@@ -275,16 +270,16 @@ public class SideBetView implements ISideBetView {
                 //Draw Super 7
                 g.setFont(result);
                 g.setColor(Color.YELLOW);
-                g.fill3DRect(X + 59, Y + 5, 88, 25, true);
+                g.fill3DRect(X + 58, Y + 5, 95, 25, true);
                 g.setColor(Color.BLACK);
                 g.drawString(s7, X + 60, Y + 25);
             }
-            if (d == 10.0) {
+            if (d == 1.0) {
                 
                 // Draw Exactly 13
                 g.setFont(result);
                 g.setColor(Color.YELLOW);
-                g.fill3DRect(X + 59, Y + 5, 122, 25, true);
+                g.fill3DRect(X + 58, Y + 5, 122, 25, true);
                 g.setColor(Color.BLACK);
                 g.drawString(ex, X + 60, Y + 25);
             }
@@ -293,7 +288,7 @@ public class SideBetView implements ISideBetView {
                 //Draw Royal Match
                 g.setFont(result);
                 g.setColor(Color.YELLOW);
-                g.fill3DRect(X + 59, Y + 5, 150, 25, true);
+                g.fill3DRect(X + 58, Y + 5, 150, 25, true);
                 g.setColor(Color.BLACK);
                 g.drawString(rm, X + 60, Y + 25);
             }

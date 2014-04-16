@@ -30,17 +30,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class implements the side bet rule for Super 7.
+ * This class implements the side bet rule for
+ * Super 7, Exactly 13 & Royal Match.
  *
  * @author Ron Coleman
+ * @author Dan Blossom, Mohammed Ali, Joe Muro
  */
 public class SideBetRule implements ISideBetRule {
     
     private final Logger LOG = LoggerFactory.getLogger(SideBetRule.class);
 
+    private static final Double EXACTLY_13 = 1.0;
     private static final Double PAYOFF_SUPER7 = 3.0;
     private static final Double ROYAL_MATCH = 25.0;
-    private static final Double EXACTLY_13 = 10.0;
 
     /**
      * Apply rule to the hand and return the payout if the rule matches and the
@@ -79,22 +81,18 @@ public class SideBetRule implements ISideBetRule {
 
         double sideBet = 0;
 
-        if (isExactly13(hand)) {
-            sideBet = EXACTLY_13;
-            LOG.info("side bet EXACTLY 13 matches");
-        } else if (isExactly13(hand) && isSuper7(hand)) {
-            sideBet = EXACTLY_13;
-            LOG.info("side bet EXACTLY 13 matches");
+        if (isRoyalMatch(hand)) {
+            sideBet = ROYAL_MATCH;
+            LOG.info("side bet ROYAL MATCH matches");
         } else if (isSuper7(hand)) {
             sideBet = PAYOFF_SUPER7;
             LOG.info("side bet SUPER 7 matches");
-        } else if (isRoyalMatch(hand)) {
-            sideBet = ROYAL_MATCH;
-            LOG.info("side bet ROYAL MATCH matches");
+        } else if (isExactly13(hand)) {
+            sideBet = EXACTLY_13;
+            LOG.info("side bet EXACTLY 13 matches");
         } else {
             sideBet = 0;
         }
-
         return sideBet;
     }
 
