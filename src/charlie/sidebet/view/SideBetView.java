@@ -46,14 +46,18 @@ import org.slf4j.LoggerFactory;
 /**
  * This class implements the side bet view
  * @author Ron Coleman, Ph.D.
+ * @author Mohammed Ali, Dan Blossom, Joe Muro
  */
 public class SideBetView implements ISideBetView {
     private final Logger LOG = LoggerFactory.getLogger(SideBetView.class);
     
+    //starting point for side bet circle
     public final static int X = 400;
     public final static int Y = 200;
+    //diameter of circle
     public final static int DIAMETER = 50;
     
+    //font and stroke for the side bet circle
     protected Font font = new Font("Arial", Font.BOLD, 18);
     protected BasicStroke stroke = new BasicStroke(3);
     
@@ -78,16 +82,20 @@ public class SideBetView implements ISideBetView {
     public final static String HUNDRED = "./images/chip-100-1.png";
     
     //for the payout info that is placed on table
-    protected final String SUPER = "Super 7       pays    3:1";
+    protected final String SUPER = "Super 7        pays    3:1";
     protected final String EXACTLY = "Exactly 13    pays  10:1";
     protected final String ROYAL = "Royal Match pays  25:1";
     
-    //if game is over or not - start with not
+    //flag set if game is over, used to print
+    //labels on the ATable
     private boolean gameOver = false;
     
     //the bet if taken + for win - for lose
     double bet = 0.0;
     
+    /**
+     * Constructor
+     */
     public SideBetView() {
         LOG.info("side bet view constructed");
     }
@@ -136,8 +144,8 @@ public class SideBetView implements ISideBetView {
         if(inRange(x, y)) {
             SoundFactory.play(Effect.CHIPS_OUT);
             amt = 0;
-            LOG.info("B. side bet amount cleared");
             chips.clear();
+            LOG.info("B. side bet amount cleared");
         }
     }
 
@@ -151,6 +159,9 @@ public class SideBetView implements ISideBetView {
         //set gameover flag to true so we can render win or lose label
         gameOver = true;
         
+        //amount of the bet won or lost
+        //field moved to global to use for
+        //figuring out what sidebet was won
         bet = hid.getSideAmt();
         
         if(bet == 0)
@@ -169,8 +180,9 @@ public class SideBetView implements ISideBetView {
      */
     @Override
     public void starting() {
-        //reset the gameover flag to remove label
+        //reset the gameover flag to remove labels
         gameOver = false;
+        LOG.info("new game starting...");
     }
 
     /**
@@ -229,10 +241,18 @@ public class SideBetView implements ISideBetView {
             if(bet > 0)
                 drawResult("WIN!", g);
             if(bet < 0)
-                drawResult("LOSE", g);
+                drawResult("LOSE!", g);
         }
     }
     
+    /**
+     * Method is used to determine if the mouse is inside the oval
+     * used to clear the side bet only when user left clicks inside
+     * sidebet oval
+     * @param x - starting x position
+     * @param y - starting y posttion
+     * @return - true or false if within the range of oval
+     */
     private boolean inRange(int x, int y) {
         //gets the x and y start position of sidebet oval
         int xStart = (X-DIAMETER/2);
@@ -242,63 +262,94 @@ public class SideBetView implements ISideBetView {
         return (x > xStart && x < xStart+DIAMETER && y > yStart && y < yStart+DIAMETER);
     }
 
+    /**
+     * Method draws win or lose labels on ATABLE with corresponding
+     * Super 7, Royal Match or Exactly 13 labels to say what they won.
+     * @param name - what to put on "main" label IE: Win / Lose
+     * @param g - the graphics to render too.
+     */
     private void drawResult(String name, Graphics2D g) {
 
-        String s7 = "SUPER 7", rm = "ROYAL MATCH", ex = "EXACTLY 13";
-
-        Font result = new Font("Ariel", Font.BOLD, 18);
+        Font result = new Font("Ariel", Font.BOLD, 20);
 
         if (name.equals("LOSE!")) {
             //Draw LOSE
             g.setFont(result);
             g.setColor(Color.RED);
-            g.fill3DRect(X + 65, Y - 20, 62, 25, true);
+            g.fill3DRect(X + 60, Y - 20, 62, 25, true);
             g.setColor(Color.WHITE);
             g.drawString(name, X + 61, Y);
         } else {
             //Draw WIN
             g.setFont(result);
             g.setColor(Color.GREEN);
-            g.fill3DRect(X + 58, Y - 20, 60, 25, true);
+            g.fill3DRect(X + 59, Y - 20, 46, 25, true);
             g.setColor(Color.BLACK);
             g.drawString(name, X + 60, Y);
 
-            //get the sidebet amount to compare
-            Double d = (bet / amt);
-            if (d == 3.0) {
-                
-                //Draw Super 7
-                g.setFont(result);
-                g.setColor(Color.YELLOW);
-                g.fill3DRect(X + 58, Y + 5, 95, 25, true);
-                g.setColor(Color.BLACK);
-                g.drawString(s7, X + 60, Y + 25);
-            }
-            if (d == 1.0) {
-                
-                // Draw Exactly 13
-                g.setFont(result);
-                g.setColor(Color.YELLOW);
-                g.fill3DRect(X + 58, Y + 5, 122, 25, true);
-                g.setColor(Color.BLACK);
-                g.drawString(ex, X + 60, Y + 25);
-            }
-            if (d == 25.0) {
-                
-                //Draw Royal Match
-                g.setFont(result);
-                g.setColor(Color.YELLOW);
-                g.fill3DRect(X + 58, Y + 5, 150, 25, true);
-                g.setColor(Color.BLACK);
-                g.drawString(rm, X + 60, Y + 25);
-            }
+            //will determine what secondary label to apply under win
+            drawRuleApplied(result, g);
         }
-
+    }
+    
+    /**
+     * Depending on the what rule was applied (super 7, royal match
+     * or exact 13) print that corresponding label
+     * @param font - the font to print it
+     * @param g - the graphics
+     */
+    private void drawRuleApplied(Font font, Graphics2D g){ 
+        
+        //these settings are the same across all 3 labels
+        g.setFont(font);
+        g.setColor(Color.YELLOW);        
+        
+        // Draw Exactly 13 label
+        if (getSideBetOdd() == 1.0) {
+            g.fill3DRect(X + 59, Y + 5, 122, 25, true);
+            g.setColor(Color.BLACK);
+            g.drawString("EXACTLY 13", X + 60, Y + 25);
+            return;
+        }
+        
+        //draw super 7 label
+        if (getSideBetOdd() == 3.0) {
+            g.fill3DRect(X + 59, Y + 5, 88, 25, true);
+            g.setColor(Color.BLACK);
+            g.drawString("SUPER 7", X + 60, Y + 25);
+            return;
+        }
+        
+        //draw Royal Match label
+        if (getSideBetOdd() == 25.0) {
+            g.fill3DRect(X + 59, Y + 5, 150, 25, true);
+            g.setColor(Color.BLACK);
+            g.drawString("ROYAL MATCH", X + 60, Y + 25);
+        }
+    }
+    
+    /**
+     * This will return what the odd is (IE:3:1) resulting
+     * in what was won, Super 7, Exactly 13 or Royal Match
+     * @return A payout odd or zero if bet is zero or amt is zero.
+     */
+    private double getSideBetOdd(){
+        if(amt != 0){
+            return (bet / amt);
+        }
+        return 0;
     }
 
-    
+    /**
+     * Method will return the image for the chip given
+     * the chip amount
+     * @param chipAmt - given an amount 5, 25, 100 it
+     *                  will return corresponding chip image
+     * @return - chip image, or null if incorrect amount passed.
+     */
     private Image getChipImage(int chipAmt){
         
+        //set to null to return null pointer IE: wrong amount no chip image
         Image img = null;
         switch (chipAmt){
             

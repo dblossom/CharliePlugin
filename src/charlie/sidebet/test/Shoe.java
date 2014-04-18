@@ -26,8 +26,9 @@ package charlie.sidebet.test;
 import charlie.card.Card;
 
 /**
- *
- * @author Marist User
+ * Test shoe for the sidebet rule / view. Builds a shoe with
+ * a few sidebet wins/lose of various types.
+ * @author Dan Blossom, Mohammad Ali, Joe Muro
  */
 public class Shoe extends charlie.card.Shoe {
     @Override
@@ -115,7 +116,7 @@ public class Shoe extends charlie.card.Shoe {
         cards.add(new Card(6,Card.Suit.HEARTS));
         cards.add(new Card(Card.KING,Card.Suit.HEARTS));
         
-        cards.add(new Card(7,Card.Suit.CLUBS));
+        cards.add(new Card(8,Card.Suit.CLUBS));
         cards.add(new Card(6,Card.Suit.CLUBS)); 
         
         cards.add(new Card(Card.KING,Card.Suit.DIAMONDS)); 

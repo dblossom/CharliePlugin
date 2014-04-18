@@ -49,7 +49,7 @@ public class SideBetRule implements ISideBetRule {
      * negative bet if the rule does not match.
      *
      * @param hand Hand to analyze.
-     * @return
+     * @return bet amount won or lost
      */
     @Override
     public double apply(Hand hand) {
@@ -74,12 +74,20 @@ public class SideBetRule implements ISideBetRule {
     /**
      * Determines the highest payout between super7,exactly13, and royal match
      *
-     * @param hand
-     * @return
+     * @param hand the hand to evaluate
+     * @return the best payout for a sidebet given a hand.
      */
     private double getHighestPayout(Hand hand) {
 
-        double sideBet = 0;
+        double sideBet;
+        
+        //this block of if statements rely on the fact
+        //their order of payouts is higher than the one
+        //after it. So, if say 7,6 comes out super 7 will
+        //be paid and not exactly 13 since super 7 is the
+        //greater payout. If the payout structure changes
+        //or other options are added, this would need to 
+        //be reevaluated.
 
         if (isRoyalMatch(hand)) {
             sideBet = ROYAL_MATCH;
@@ -99,8 +107,8 @@ public class SideBetRule implements ISideBetRule {
     /**
      * Determines if the hand's first card is a 7.
      *
-     * @param hand
-     * @return
+     * @param hand hand to evaluate
+     * @return true if first card is 7 false otherwise
      */
     private boolean isSuper7(Hand hand) {
         return hand.getCard(0).value() == 7;
@@ -109,20 +117,25 @@ public class SideBetRule implements ISideBetRule {
     /**
      * Determines if the hand is a royal match
      *
-     * @param hand
-     * @return
+     * @param hand the hand to evaluate
+     * @return true if 2 cards are suited match KQ either order, else false
      */
     private boolean isRoyalMatch(Hand hand) {
 
+        //set return flag
         boolean royal = false;
 
+        //get first two cards suits
         Suit s1 = hand.getCard(0).getSuit();
         Suit s2 = hand.getCard(1).getSuit();
 
+        //get the cards "rank" to test if it is a king or queen
         int card_1 = hand.getCard(0).getRank();
         int card_2 = hand.getCard(1).getRank();
 
+        //if either card is king and other is a queen ... good!
         if ((card_1 == Card.KING && card_2 == Card.QUEEN) || (card_2 == Card.KING && card_1 == Card.QUEEN)) {
+            //before setting flag, they must be same suit!!
             if (s1 == s2) {
                 royal = true;
             }
@@ -133,8 +146,8 @@ public class SideBetRule implements ISideBetRule {
     /**
      * Determines if the hand value is 13 (first 2 cards)
      *
-     * @param hand
-     * @return
+     * @param hand the hand to evaluate
+     * @return true if hand value is 13 false otherwise
      */
     private boolean isExactly13(Hand hand) {
         int card_1 = hand.getCard(0).value();
