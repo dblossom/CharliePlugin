@@ -7,6 +7,7 @@ import charlie.card.Card;
 import charlie.card.Hand;
 import charlie.card.Hid;
 import charlie.dealer.Seat;
+import charlie.plugin.IAdvisor;
 import charlie.plugin.IGerty;
 import charlie.util.Play;
 import charlie.view.AMoneyManager;
@@ -32,9 +33,7 @@ public class MyClientBot implements IGerty {
     protected Hand myHand;
     protected boolean myTurn;
     
-    /**
-     * Dealers upcard
-     */
+
     protected Card upCard;
     
     protected MyBot myBot;
@@ -46,9 +45,13 @@ public class MyClientBot implements IGerty {
     public void go() {
         LOG.info("In Go");
         
+        //for now always add 5 to bet on table
         moneyManager.upBet(MIN_BET);
         
-        courier.bet(moneyManager.getWager(), moneyManager.getWager());
+        //let us be honest to the dealer of what we put on the
+        //table and call the "getWager()" method
+        //just always make $25.00  side bets.
+        courier.bet(moneyManager.getWager(), 25);
         
     }
 
@@ -110,11 +113,12 @@ public class MyClientBot implements IGerty {
         if(hid.getSeat() == Seat.YOU)
             myHand.hit(card);
         
-//        // If this deal is to us and it is currently our turn...
-//        if (hid.getSeat() == Seat.YOU && myTurn && !myHand.isBroke() &&
-//                !myHand.isCharlie() && !myHand.isBlackjack()) {
-//            return;
-//        }
+        // If this deal is to us and it is currently our turn...
+        if (hid.getSeat() == Seat.YOU && myTurn && !myHand.isBroke() &&
+                !myHand.isCharlie() && !myHand.isBlackjack()) {
+            
+            new Thread(new Middleman(myHand, upCard)).start();
+        }
         
     }
 
@@ -179,9 +183,7 @@ public class MyClientBot implements IGerty {
            
            myTurn = true;
            
-           while(myTurn)
-               basicStrategyPlay();
-
+           new Thread(new Middleman(myHand, upCard)).start();
            
        }
        else{
@@ -197,39 +199,61 @@ public class MyClientBot implements IGerty {
         
         Play play = basicStrategy.advise(myHand, upCard);
         
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException ex) {
-            java.util.logging.Logger.getLogger(MyClientBot.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        switch (play) {
-            
-            case SPLIT:
-                //let us just stay
-                //going to make a simple
-                //default to simple basic strat
-                courier.stay(myHid);
-                break;
-                    
-            case DOUBLE_DOWN:
-                //not first hand cannot double down just hit
-                if(myHand.size() != 2){
-                    courier.hit(myHid);
-                }
-                //first hand double down is allowed
-                courier.dubble(myHid);
-                myTurn = !myTurn;
-                break;
-                    
-            case HIT:
-                courier.hit(myHid);
-                break;
-                
-            case STAY:
-                courier.stay(myHid);
-                myTurn = !myTurn;
-                break;
-            }
+
     }   
+    
+    class Middleman implements Runnable{
+        
+        private final Card upCard;
+        private final Hand myHand;
+        private final IAdvisor advisor = new BasicStrategy();
+        
+        public Middleman(Hand myHand, Card upCard){
+            this.upCard = upCard;
+            this.myHand = myHand;
+        }
+
+        @Override
+        public void run() {
+            
+            Play advise = advisor.advise(myHand, upCard);
+            
+            try {
+                Thread.sleep(2000);
+            }
+            catch (InterruptedException ex) {
+            java.util.logging.Logger.getLogger(MyClientBot.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            switch (advise) {
+                
+                case SPLIT:
+                    //let us just stay
+                    //going to make a simple
+                    //default to simple basic strat
+                    courier.stay(myHid);
+                    break;
+                    
+                case DOUBLE_DOWN:
+                    //not first hand cannot double down just hit
+                    if(myHand.size() != 2){
+                        courier.hit(myHid);
+                    }
+                    //first hand double down is allowed
+                    courier.dubble(myHid);
+                    myTurn = !myTurn;
+                    break;
+                    
+                case HIT:
+                    courier.hit(myHid);
+                    break;
+                
+                case STAY:
+                    courier.stay(myHid);
+                    myTurn = !myTurn;
+                    break;
+            
+            }
+        }
+    }
 }
