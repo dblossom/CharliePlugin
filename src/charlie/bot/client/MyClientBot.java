@@ -60,25 +60,20 @@ public class MyClientBot implements IGerty {
     @Override
     public void go() {
         LOG.info("In Go");
-        
-        //TODO: Implement MAXBET
-        //TODO: Implement MeanBet
+
         //for now always add 5 to bet on table
         moneyManager.upBet(MIN_BET);
-        
+        //get current bet
         int currentBet = moneyManager.getWager();
-        
-        //let us be honest to the dealer of what we put on the
-        //table and call the "getWager()" method
-        //just always make $25.00  side bets.
+        //tell dealer our bet and sidebet
         courier.bet(currentBet, 25);
-
+        //total amount bet for ALL games
         totalBet = totalBet + currentBet;
-        
+        //is current bet larger than max, if so set current
+        //to new max. We want to know about our largest bet
         maxBet = (maxBet < currentBet) ? currentBet : maxBet;
         
         LOG.info("Total Bet: " + totalBet);
-        LOG.info("Mean Bet: " + meanBet);
         LOG.info("Max Bet: " + maxBet);
     
     }
@@ -108,21 +103,27 @@ public class MyClientBot implements IGerty {
     @Override
     public void startGame(List<Hid> hids, int shoeSize) {
         
+        //We want to know how many minutes we have played
+        //Do we care about seconds and maybe hours too?
         long nowMilliseconds = System.currentTimeMillis() - startMilliseconds;
-        
         minutesPlayed = TimeUnit.MILLISECONDS.toMinutes(nowMilliseconds);
-        
         LOG.info("The game has been running for " + minutesPlayed + " minutes");
         
+        //it is not our turn yet!
         myTurn = false;
+        //just incase old dealer upCard is hanging around
         upCard = null;
+        //what game are we starting?
         ++gamesPlayed;
-        
         LOG.info("This is game number: " + gamesPlayed);
         
+        //set our shoeSize
+        //TODO: remember to divide by 52 to get cards remaining
         this.shoeSize = shoeSize;
         LOG.info("Shoe size set: " + shoeSize);
         
+        //get and set our hand and hid from the  list
+        //of passed in hids.
         for(Hid hid: hids){
             if(Seat.YOU == hid.getSeat()){
                 this.myHid = hid;
@@ -133,28 +134,35 @@ public class MyClientBot implements IGerty {
 
     @Override
     public void endGame(int shoeSize) {
-        this.shoeSize = shoeSize;
+        
+        //doing this after the game because go() and startGame()
+        //do not seem to wait for each other and we get a div by
+        //zero error because gamesPlayed is zero. - could move it to go()?
         meanBet = (double) (totalBet / gamesPlayed);
+        
+        this.shoeSize = shoeSize;
         LOG.info("End of game, shoe size: " + shoeSize);
     }
 
     @Override
     public void deal(Hid hid, Card card, int[] values) {
         
-        LOG.info("Deal");
+        LOG.info("Deal received...");
         
+        //set the dealers upCard
         if(hid.getSeat() == Seat.DEALER && upCard == null){
             upCard = card;
             LOG.info("Dealers Card: " + upCard);
         }
         
+        //hit our hand with the incoming card
         if(hid.getSeat() == Seat.YOU)
             myHand.hit(card);
         
         // If this deal is to us and it is currently our turn...
         if (hid.getSeat() == Seat.YOU && myTurn && !myHand.isBroke() &&
                 !myHand.isCharlie() && !myHand.isBlackjack()) {
-            
+            //spawn thread to decide what move to make
             new Thread(new Middleman(myHand, upCard)).start();
         }
         
@@ -167,43 +175,36 @@ public class MyClientBot implements IGerty {
 
     @Override
     public void bust(Hid hid) {
-        
         busts++;
         LOG.info("Bust received count now " + busts);
-        
     }
 
     @Override
     public void win(Hid hid) {
-       
         wins++;
         LOG.info("Win received count now " + wins);
     }
 
     @Override
     public void blackjack(Hid hid) {
-        
         bjs++;
         LOG.info("Backjack received count now " + bjs);
     }
 
     @Override
     public void charlie(Hid hid) {
-      
         charlies++;
         LOG.info("Charlie received count now " + charlies);
     }
 
     @Override
     public void lose(Hid hid) {
-       
         losses++;
         LOG.info("Lose recieved count now " + losses);
     }
 
     @Override
     public void push(Hid hid) {
-       
         pushes++;
         LOG.info("Push recieved count now " + pushes);
     }
@@ -215,20 +216,22 @@ public class MyClientBot implements IGerty {
 
     @Override
     public void play(Hid hid) {
-       LOG.info("Play");
+       LOG.info("Play received...");
 
+       //our turn ... 
        if (hid.getSeat() == Seat.YOU){
-           
+           //set flag to indicate our turn
            myTurn = true;
-           
+           //spawn thread to make move
            new Thread(new Middleman(myHand, upCard)).start();
-           
        }
        else{
+           //turn over or not our turn
+           //check if flag is set and
+           //if so, set it to false
            if(myTurn)
                myTurn = false;
        }
-       
     }
     
     /**
@@ -293,7 +296,7 @@ public class MyClientBot implements IGerty {
         /**
          * What to do in the case of a split since
          * Charlie does not implement split we basically
-         * 
+         * convert to the value and make a move
          */
         protected void splitPlay(Hand myHand){
             
