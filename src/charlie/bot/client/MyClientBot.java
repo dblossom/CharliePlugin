@@ -2,7 +2,6 @@ package charlie.bot.client;
 
 import charlie.actor.Courier;
 import charlie.advisor.BasicStrategy;
-import charlie.bot.server.MyBot;
 import charlie.card.Card;
 import charlie.card.Hand;
 import charlie.card.Hid;
@@ -13,6 +12,7 @@ import charlie.util.Play;
 import charlie.view.AMoneyManager;
 import java.awt.Graphics2D;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,26 +33,54 @@ public class MyClientBot implements IGerty {
     protected Hand myHand;
     protected boolean myTurn;
     
-
-    protected Card upCard;
+    //Keep track of "now" in milliseconds
+    protected long startMilliseconds = System.currentTimeMillis();
     
-    protected MyBot myBot;
+    //Keep track of minutes played
+    protected long minutesPlayed;
+    
+    //Dealers upCard
+    protected Card upCard;
     
     //Keep track of wins, lose, bj, busts, charlie, push set all to zero
     protected static int wins, losses, bjs, busts, charlies, pushes = 0;
+    
+    //Keeps track of max bet played
+    protected static int maxBet;
+    
+    //Keeps track of mean bet amount
+    protected static double meanBet;
+    
+    //Keeps track of number of games played
+    protected static int gamesPlayed;
+    
+    //Keeps track of total amount bet
+    protected static int totalBet;
     
     @Override
     public void go() {
         LOG.info("In Go");
         
+        //TODO: Implement MAXBET
+        //TODO: Implement MeanBet
         //for now always add 5 to bet on table
         moneyManager.upBet(MIN_BET);
+        
+        int currentBet = moneyManager.getWager();
         
         //let us be honest to the dealer of what we put on the
         //table and call the "getWager()" method
         //just always make $25.00  side bets.
-        courier.bet(moneyManager.getWager(), 25);
+        courier.bet(currentBet, 25);
+
+        totalBet = totalBet + currentBet;
         
+        maxBet = (maxBet < currentBet) ? currentBet : maxBet;
+        
+        LOG.info("Total Bet: " + totalBet);
+        LOG.info("Mean Bet: " + meanBet);
+        LOG.info("Max Bet: " + maxBet);
+    
     }
 
     @Override
@@ -80,8 +108,17 @@ public class MyClientBot implements IGerty {
     @Override
     public void startGame(List<Hid> hids, int shoeSize) {
         
+        long nowMilliseconds = System.currentTimeMillis() - startMilliseconds;
+        
+        minutesPlayed = TimeUnit.MILLISECONDS.toMinutes(nowMilliseconds);
+        
+        LOG.info("The game has been running for " + minutesPlayed + " minutes");
+        
         myTurn = false;
         upCard = null;
+        ++gamesPlayed;
+        
+        LOG.info("This is game number: " + gamesPlayed);
         
         this.shoeSize = shoeSize;
         LOG.info("Shoe size set: " + shoeSize);
@@ -97,6 +134,7 @@ public class MyClientBot implements IGerty {
     @Override
     public void endGame(int shoeSize) {
         this.shoeSize = shoeSize;
+        meanBet = (double) (totalBet / gamesPlayed);
         LOG.info("End of game, shoe size: " + shoeSize);
     }
 
@@ -193,19 +231,18 @@ public class MyClientBot implements IGerty {
        
     }
     
-    protected void basicStrategyPlay(){
-        
-        BasicStrategy basicStrategy = new BasicStrategy();
-        
-        Play play = basicStrategy.advise(myHand, upCard);
-        
-
-    }   
+    /**
+     * Inner class to be a worker thread spawned for the
+     * autobot to make a move
+     * 
+     * @author D.Blossom, M. Ali, J.Muro
+     */
     
     class Middleman implements Runnable{
         
         private final Card upCard;
         private final Hand myHand;
+
         private final IAdvisor advisor = new BasicStrategy();
         
         public Middleman(Hand myHand, Card upCard){
@@ -228,10 +265,7 @@ public class MyClientBot implements IGerty {
             switch (advise) {
                 
                 case SPLIT:
-                    //let us just stay
-                    //going to make a simple
-                    //default to simple basic strat
-                    courier.stay(myHid);
+                    splitPlay(myHand);
                     break;
                     
                 case DOUBLE_DOWN:
@@ -253,6 +287,71 @@ public class MyClientBot implements IGerty {
                     myTurn = !myTurn;
                     break;
             
+            }
+        }
+        
+        /**
+         * What to do in the case of a split since
+         * Charlie does not implement split we basically
+         * 
+         */
+        protected void splitPlay(Hand myHand){
+            
+            //how did we even get in here?
+            if(!myHand.isPair())
+                return;
+        
+            //pair of 2, 3, 4. Value equivalent is hit
+            if(((myHand.getValue() == 4)
+                ||  (myHand.getValue() == 6)
+                ||  (myHand.getValue() == 8))){
+            
+            courier.hit(myHid);
+            return;
+
+        }
+        
+            //pair of 5's
+            if(myHand.getValue() == 10){
+                //dealer has A or 10 value card just hit
+                if(upCard.isAce() ||upCard.value() == 10){
+                    courier.hit(myHid);
+                    return;
+                }
+                //otherwise double
+                courier.dubble(myHid);
+                return;
+            }
+        
+            //pair of 6's or A's ( 11 + 1 )
+            if(myHand.getValue() == 12 || myHand.getCard(0).isAce()){
+            
+                if(upCard.value() == 2 || upCard.value() == 3)
+                    courier.hit(myHid);
+            
+                if(upCard.value() > 3 && upCard.value() < 7)
+                    courier.stay(myHid);
+            
+                courier.hit(myHid);
+            
+                return;
+            }
+        
+            //pair of 7's or 8's
+            if(myHand.getValue() == 14 || myHand.getValue() == 16){
+            
+                if(upCard.value() < 7){
+                    courier.stay(myHid);
+                    return;
+                }
+            
+                courier.hit(myHid);
+                return;
+            }
+        
+            //pair of 10's and anything larger than 16
+            if(myHand.getValue() > 16 && myHand.getValue() < 22){
+                courier.stay(myHid);
             }
         }
     }
