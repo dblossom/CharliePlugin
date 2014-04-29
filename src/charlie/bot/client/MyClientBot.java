@@ -10,6 +10,8 @@ import charlie.plugin.IAdvisor;
 import charlie.plugin.IGerty;
 import charlie.util.Play;
 import charlie.view.AMoneyManager;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -27,38 +29,84 @@ public class MyClientBot implements IGerty {
     protected Courier courier;
     protected AMoneyManager moneyManager;
     protected int shoeSize;
-    protected int MIN_BET = 5;
     protected Logger LOG = LoggerFactory.getLogger(MyClientBot.class);
     protected Hid myHid;
     protected Hand myHand;
     protected boolean myTurn;
     
-    //Keep track of "now" in milliseconds
-    protected long startMilliseconds = System.currentTimeMillis();
+    /**
+     * The game start time in milliseconds.
+     */
+    protected final long startMilliseconds = System.currentTimeMillis();
     
-    //Keep track of minutes played
+    /**
+     * A counter to track the total time played.
+     */
     protected long minutesPlayed;
     
-    //Dealers upCard
+    /**
+     * A reference to the dealer's upcard.
+     */
     protected Card upCard;
     
-    //Keep track of wins, lose, bj, busts, charlie, push set all to zero
-    protected static int wins, losses, bjs, busts, charlies, pushes = 0;
+    /**
+     * A counter to track the number of games that resulted in a win.
+     */
+    protected int wins = 0;
     
-    //Keeps track of max bet played
-    protected static int maxBet;
+    /**
+     * A counter to track the number of games that resulted in a loss.
+     */
+    protected int losses = 0;
     
-    //Keeps track of mean bet amount
-    protected static double meanBet;
+    /**
+     * A counter to track the number of games that resulted in blackjack.
+     */
+    protected int blackjacks = 0; 
     
-    //Keeps track of number of games played
-    protected static int gamesPlayed;
+    /**
+     * A counter to track the number of games that resulted in a bust.
+     */
+    protected int busts = 0;
     
-    //Keeps track of total amount bet
-    protected static int totalBet;
+    /**
+     * A counter to track the number of games that resulted in a charlie.
+     */
+    protected int charlies = 0;
+    
+    /**
+     * A counter to track the number of games that resulted in a push.
+     */
+    protected int pushes = 0;
+    
+    /**
+     * A counter to track track the max bet placed.
+     */
+    protected int maxBet;
+    
+    /**
+     * A counter to track the average bet amount.
+     */
+    protected double meanBet;
+    
+    /**
+     * A counter to track the number of games played.
+     */
+    protected int gamesPlayed;
+    
+    /**
+     * A counter to track the total amount bet.
+     */
+    protected int totalBetAmt;
+    
+    /**
+     * The minimum bet amount required by the dealer.
+     */
+    protected static int MIN_BET = 5;
     
     @Override
     public void go() {
+        
         LOG.info("In Go");
 
         //for now always add 5 to bet on table
@@ -68,12 +116,12 @@ public class MyClientBot implements IGerty {
         //tell dealer our bet and sidebet
         courier.bet(currentBet, 25);
         //total amount bet for ALL games
-        totalBet = totalBet + currentBet;
+        totalBetAmt += currentBet;
         //is current bet larger than max, if so set current
         //to new max. We want to know about our largest bet
         maxBet = (maxBet < currentBet) ? currentBet : maxBet;
         
-        LOG.info("Total Bet: " + totalBet);
+        LOG.info("Total Bet: " + totalBetAmt);
         LOG.info("Max Bet: " + maxBet);
     
     }
@@ -97,7 +145,19 @@ public class MyClientBot implements IGerty {
 
     @Override
     public void render(Graphics2D g) {
+                
+        // Draw the at-stake place on the table
+        g.setColor(Color.RED); 
+        g.setFont(new Font("Ariel", Font.PLAIN, 11));
         
+        /** Draw the following to the left of the player. **/
+        g.drawString("COUNT-TYPE: KO", 50, 200);
+        g.drawString("SHOE SIZE: " + shoeSize / 52, 50, 225);
+        g.drawString("RUNNING COUNT: 0", 50, 250);
+        g.drawString("TRUE COUNT: 0", 50, 275);
+        g.drawString("GAMES PLAYED: " + gamesPlayed, 50, 300);
+        g.drawString("MINUTES PLAYED: " + minutesPlayed, 50, 325);
+        g.drawString("MAX BET AMOUNT: " + maxBet, 50, 350);
     }
 
     @Override
@@ -138,7 +198,7 @@ public class MyClientBot implements IGerty {
         //doing this after the game because go() and startGame()
         //do not seem to wait for each other and we get a div by
         //zero error because gamesPlayed is zero. - could move it to go()?
-        meanBet = (double) (totalBet / gamesPlayed);
+        meanBet = (double) (totalBetAmt / gamesPlayed);
         
         this.shoeSize = shoeSize;
         LOG.info("End of game, shoe size: " + shoeSize);
@@ -187,8 +247,8 @@ public class MyClientBot implements IGerty {
 
     @Override
     public void blackjack(Hid hid) {
-        bjs++;
-        LOG.info("Backjack received count now " + bjs);
+        blackjacks++;
+        LOG.info("Backjack received count now " + blackjacks);
     }
 
     @Override
