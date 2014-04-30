@@ -35,6 +35,11 @@ public class MyClientBot implements IGerty {
     protected boolean myTurn;
     
     /**
+     * KO Running Count
+     */
+    protected int koCount = 0;
+
+    /**
      * The game start time in milliseconds.
      */
     protected final long startMilliseconds = System.currentTimeMillis();
@@ -103,14 +108,40 @@ public class MyClientBot implements IGerty {
      * The minimum bet amount required by the dealer.
      */
     protected static int MIN_BET = 5;
+
     
     @Override
     public void go() {
-        
         LOG.info("In Go");
+        
+        int betAmount = (koCount < 1) ? MIN_BET : (koCount * 130);
 
-        //for now always add 5 to bet on table
-        moneyManager.upBet(MIN_BET);
+        //clear the current bet
+        moneyManager.clearBet();
+        
+        //Make a bet ... this is going to be ugly.
+        int hundreds = betAmount / 100;
+        int twofives = (betAmount % 100) / 25;
+        int fives = ((betAmount % 100) % 25) / 5;
+        
+        //since we need to provide increments of 5, 25, or 100
+        //for now let us just loop around 5 dollar chips ... 
+        while((hundreds > 0) || (twofives > 0) || (fives > 0)){
+            
+            if(hundreds > 0)
+                moneyManager.upBet(100);
+            
+            if(twofives > 0)
+                moneyManager.upBet(25);
+            
+            if(fives > 0)
+                moneyManager.upBet(5);
+            
+            hundreds--;
+            twofives--;
+            fives--;
+            
+        }
         //get current bet
         int currentBet = moneyManager.getWager();
         //tell dealer our bet and sidebet
@@ -145,15 +176,14 @@ public class MyClientBot implements IGerty {
 
     @Override
     public void render(Graphics2D g) {
-                
         // Draw the at-stake place on the table
         g.setColor(Color.RED); 
         g.setFont(new Font("Ariel", Font.PLAIN, 11));
         
         /** Draw the following to the left of the player. **/
         g.drawString("COUNT-TYPE: KO", 50, 200);
-        g.drawString("SHOE SIZE: " + shoeSize / 52, 50, 225);
-        g.drawString("RUNNING COUNT: 0", 50, 250);
+        g.drawString("SHOE SIZE: " + shoeSize, 50, 225);
+        g.drawString("RUNNING COUNT: " + koCount, 50, 250);
         g.drawString("TRUE COUNT: 0", 50, 275);
         g.drawString("GAMES PLAYED: " + gamesPlayed, 50, 300);
         g.drawString("MINUTES PLAYED: " + minutesPlayed, 50, 325);
@@ -178,7 +208,6 @@ public class MyClientBot implements IGerty {
         LOG.info("This is game number: " + gamesPlayed);
         
         //set our shoeSize
-        //TODO: remember to divide by 52 to get cards remaining
         this.shoeSize = shoeSize;
         LOG.info("Shoe size set: " + shoeSize);
         
@@ -209,6 +238,14 @@ public class MyClientBot implements IGerty {
         
         LOG.info("Deal received...");
         
+        if(card.value() > 1 && card.value() <8)
+            ++koCount;
+        
+        if(card.value() == 10 || card.isAce() || card.isFace())
+            --koCount;
+        
+        LOG.info("Running count is now: " + koCount);
+        
         //set the dealers upCard
         if(hid.getSeat() == Seat.DEALER && upCard == null){
             upCard = card;
@@ -232,7 +269,7 @@ public class MyClientBot implements IGerty {
     public void insure() {
         
     }
-
+    
     @Override
     public void bust(Hid hid) {
         busts++;
@@ -271,6 +308,7 @@ public class MyClientBot implements IGerty {
 
     @Override
     public void shuffling() {
+        koCount = 0;
        LOG.info("Shuffling received");
     }
 
