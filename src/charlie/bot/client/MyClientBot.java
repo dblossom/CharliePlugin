@@ -249,11 +249,8 @@ public class MyClientBot implements IGerty {
         //Here we update the True Count which is the
         // running count / decks in shoe
         double decksInShoe = ((double) this.shoeSize / (double) 52);
-
-        if (RUNNING_COUNT != 0) {
-            TRUE_COUNT = ((double) RUNNING_COUNT / decksInShoe);
-        }
-
+        
+        TRUE_COUNT = ((double) RUNNING_COUNT / decksInShoe);
     }
 
     @Override
