@@ -7,13 +7,14 @@ import charlie.card.Hand;
 import charlie.card.Hid;
 import charlie.dealer.Seat;
 import charlie.plugin.IAdvisor;
-import charlie.plugin.IGerty;
+import charlie.plugin.ILogan;
 import charlie.util.Play;
 import charlie.view.AMoneyManager;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author D. Blossom, M. Ali, J. Muro
  */
-public class MyClientBot implements IGerty {
+public class MyClientBot implements ILogan {
 
   protected Logger logger = LoggerFactory.getLogger(MyClientBot.class);
   protected Courier courier;
@@ -34,23 +35,16 @@ public class MyClientBot implements IGerty {
    * We need an advisor to execute the basic strategy.
    */
   private final IAdvisor advisor = new BasicStrategy();
-      
-      
+         
   /**
    * The number of cards in the shoe.
    */
   protected int shoeSize;
 
   /**
-   * A unique identifier for our hand.
-   */
-  protected Hid myHid;
-
-  /**
    * A reference to our hand.
    */
-  protected Hand myHand;
-
+  protected HashMap<Hid, Hand> hands = new HashMap<>();
   /**
    * A flag indicating whether it is our turn.
    */
@@ -166,10 +160,13 @@ public class MyClientBot implements IGerty {
     int currentBet = moneyManager.getWager();
 
     // Tell dealer our bet and sidebet and receive an HID
-    // use that HID to create our hand.
-    this.myHid = courier.bet(currentBet, 0);
-    this.myHand = new Hand(myHid);
-    logger.info("My HID is: " + myHid);
+    Hid hid = courier.bet(currentBet,0);
+
+    // store it in the hashmap && create a new hand
+    this.hands.put(hid, new Hand(hid));
+    
+    // for debugging
+    logger.info("My HID is: " + hid);
 
     // total amount bet for ALL games
     totalBetAmt += currentBet;
@@ -235,8 +232,10 @@ public class MyClientBot implements IGerty {
 
     // it is not our turn yet!
     myTurn = false;
+    
     // Just incase old dealer upCard is hanging around
     upCard = null;
+    
     // increment the game count
     ++gamesPlayed;
     
@@ -262,6 +261,7 @@ public class MyClientBot implements IGerty {
     double decksInShoe = ((double)shoeSize / DECK_SIZE);
     
     trueCount = ((double) runningCount / decksInShoe);
+
   }
   
   @Override
@@ -301,8 +301,10 @@ public class MyClientBot implements IGerty {
 
     // hit our hand with the incoming card
     if (hid.getSeat() == Seat.YOU) {
-      myHand.hit(card);
-      logger.info("Our hand was hit with a " + card);
+        Hand hand = hands.get(hid);
+        hand.hit(card);
+        hands.put(hid, hand);
+        logger.info("Our hand was hit with a " + card);
     }
 
     // if it is currently our turn, let us play.
@@ -318,36 +320,42 @@ public class MyClientBot implements IGerty {
   
   @Override
   public void bust(Hid hid) {
+      myTurn = !myTurn;
     busts++;
     logger.info("Bust received count now " + busts);
   }
   
   @Override
   public void win(Hid hid) {
+      myTurn = !myTurn;
     wins++;
     logger.info("Win received count now " + wins);
   }
   
   @Override
   public void blackjack(Hid hid) {
+      myTurn = !myTurn;
     blackjacks++;
     logger.info("Backjack received count now " + blackjacks);
   }
   
   @Override
   public void charlie(Hid hid) {
+      myTurn = !myTurn;
     charlies++;
     logger.info("Charlie received count now " + charlies);
   }
   
   @Override
   public void lose(Hid hid) {
+      myTurn = !myTurn;
     losses++;
     logger.info("Lose recieved count now " + losses);
   }
   
   @Override
   public void push(Hid hid) {
+      myTurn = !myTurn;
     pushes++;
     logger.info("Push recieved count now " + pushes);
   }
@@ -383,11 +391,16 @@ public class MyClientBot implements IGerty {
           }
         }
       }
+      
+      Hand hand = hands.get(hid);
+      
       // Consult the basic strategy for our next play.
-      Play play = advisor.advise(myHand, upCard);
+      Play play = advisor.advise(hand, upCard);
+      
+      logger.info("Play: " + play.toString() + " received!");
 
       // Make the suggested play.
-      makePlay(play);
+      makePlay(play, hand);
     } else { // Either our turn is over or it is not our turn.
       // Reset the turn flag if necessary.
       if (myTurn) {
@@ -443,8 +456,9 @@ public class MyClientBot implements IGerty {
    * ensure we still have control over the basic strategy.
    *
    * @param play the play the basic strategy suggests we make.
+   * @param hand
    */
-  protected void makePlay(Play play) {
+  protected void makePlay(Play play, Hand hand) {
 
     // quick pause to give the "thinking" effect
     try {
@@ -453,30 +467,42 @@ public class MyClientBot implements IGerty {
       logger.error(null, ex);
     }
     
+    Hid hid = hand.getHid();
+    
+    System.out.println("split set: "+hid.getSplit());
+    System.out.println("Which HID: "+hid);
+    
     switch (play) {
       
       case SPLIT:
-        // split is not implemented so we need to do something else
-        splitPlay(myHand);
+          if(hid.getSplit()){
+              System.out.println("In Split's if");
+              courier.stay(hid);
+              break;
+          }
+          System.out.println("Not in splits if");
+          // quick hack
+          hid.setSplit(true);
+        courier.split(hid);
         break;
       
       case DOUBLE_DOWN:
         // not first hand cannot double down just hit
-        if (myHand.size() != 2) {
-          courier.hit(myHid);
+        if (hand.size() != 2) {
+          courier.hit(hid);
         }
         // first hand double down is allowed
-        courier.dubble(myHid);
+        courier.dubble(hid);
         // set the turn flag off since once we double turns over
         myTurn = !myTurn;
         break;
       
       case HIT:
-        courier.hit(myHid);
+        courier.hit(hid);
         break;
       
       case STAY:
-        courier.stay(myHid);
+        courier.stay(hid);
         // our turn is over.
         myTurn = !myTurn;
         break;
@@ -487,61 +513,92 @@ public class MyClientBot implements IGerty {
    * What to do in the case of a split since Charlie does not implement split we
    * basically convert to the value and make a move
    *
-   * @param myHand the hand which is a pair.
+   * @param hand the hand which is a pair.
    */
-  protected void splitPlay(Hand myHand) {
+  protected void splitPlay(Hand hand) {
+      
+      Hid hid = hand.getHid();
 
     //how did we even get in here?
-    if (!myHand.isPair()) {
+    if (!hand.isPair()) {
       return;
     }
 
     //pair of 2, 3, 4. Value equivalent is hit
-    if (((myHand.getValue() == 4)
-            || (myHand.getValue() == 6)
-            || (myHand.getValue() == 8))) {
+    if (((hand.getValue() == 4)
+            || (hand.getValue() == 6)
+            || (hand.getValue() == 8))) {
       
-      courier.hit(myHid);
+      courier.hit(hid);
       return;
     }
 
     //pair of 5's
-    if (myHand.getValue() == 10) {
+    if (hand.getValue() == 10) {
       // dealer has A or 10 value card just hit
       if (upCard.isAce() || upCard.value() == 10) {
-        courier.hit(myHid);
+        courier.hit(hid);
         return;
       }
       // otherwise double
-      courier.dubble(myHid);
+      courier.dubble(hid);
       return;
     }
 
     //pair of 6's or A's ( 11 + 1 )
-    if (myHand.getValue() == 12 || myHand.getCard(0).isAce()) {
+    if (hand.getValue() == 12 || hand.getCard(0).isAce()) {
       
       if (upCard.value() == 2 || upCard.value() == 3) {
-        courier.hit(myHid);
+        courier.hit(hid);
       }
       if (upCard.value() > 3 && upCard.value() < 7) {
-        courier.stay(myHid);
+        courier.stay(hid);
       }
-      courier.hit(myHid);
+      courier.hit(hid);
       return;
     }
 
     //pair of 7's or 8's
-    if (myHand.getValue() == 14 || myHand.getValue() == 16) {
+    if (hand.getValue() == 14 || hand.getValue() == 16) {
       if (upCard.value() < 7) {
-        courier.stay(myHid);
+        courier.stay(hid);
         return;
       }
-      courier.hit(myHid);
+      courier.hit(hid);
       return;
     }
     //pair of 10's and anything larger than 16
-    if (myHand.getValue() > 16 && myHand.getValue() < 22) {
-      courier.stay(myHid);
+    if (hand.getValue() > 16 && hand.getValue() < 22) {
+      courier.stay(hid);
     }
   }
+
+    @Override
+    public void split(Hid newHid, Hid origHid) {
+        
+        Hand origHand = hands.get(origHid);
+        
+        Hand newHand = origHand.split(newHid);
+        
+        hands.put(newHid, newHand);
+        
+//        // The cards would be helpful....
+//        // Maybe not, deal looks to handle it?
+//        hands.put(newHid, new Hand(newHid));
+//        
+//        // I can probably do away with the variable ... 
+//        split = true;
+//        
+//        // Get and remove the original hand
+//        Hand origHand = hands.remove(origHid);
+//        
+//        // Let us create a new hand from origHid this will replace
+//        Hand replaceHand = new Hand(origHid);
+//        
+//        // Hid the new hand with the first card
+//        replaceHand.hit(origHand.getCard(0));
+//        
+//        // Add the new hand
+//        hands.put(origHid, replaceHand);
+    }
 }

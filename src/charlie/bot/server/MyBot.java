@@ -165,6 +165,11 @@ public class MyBot implements IBot {
         }
     }
 
+    @Override
+    public void split(Hid newHid, Hid origHid) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     class Middleman implements Runnable {
 
         /**
@@ -209,7 +214,15 @@ public class MyBot implements IBot {
             switch (advice) {
                 
                 case SPLIT:
-                    splitAltPlay(player.myHand, upCard);
+                    // Just stay -- otherwise need to change everything
+                    // bots cannot split anyway.
+                    //dealer.stay(player, player.getHand().getHid());
+                    if(player.getHand().getCard(0).isAce()){
+                        dealer.hit(player, player.getHand().getHid());
+                    }else{
+                        dealer.stay(player, player.getHand().getHid());
+                    }
+                    //splitAltPlay(player.myHand, upCard);
                     break;
                     
                 case DOUBLE_DOWN:

@@ -58,6 +58,11 @@ public class BasicStrategy implements IAdvisor {
     @Override
     public Play advise(Hand myHand, Card upCard) {
         
+        System.out.println("Hand Size is now: " + myHand.size());
+        for(int i = 0; i < myHand.size(); i++){
+            System.out.println("Card " + i + ": " + myHand.getCard(i));
+        }
+        
         Play lookupResult = null;
         
         // The column index is the same for all sections of the basic strategy.
