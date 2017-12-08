@@ -303,7 +303,7 @@ public class MyClientBot implements ILogan {
     if (hid.getSeat() == Seat.YOU) {
         Hand hand = hands.get(hid);
         hand.hit(card);
-        hands.put(hid, hand);
+       // hands.put(hid, hand);
         logger.info("Our hand was hit with a " + card);
     }
 
@@ -466,24 +466,19 @@ public class MyClientBot implements ILogan {
     } catch (InterruptedException ex) {
       logger.error(null, ex);
     }
-    
-    Hid hid = hand.getHid();
-    
-    System.out.println("split set: "+hid.getSplit());
-    System.out.println("Which HID: "+hid);
+    Hid hid = null;
+    // Get the current hid
+    hid = hand.getHid();
     
     switch (play) {
       
       case SPLIT:
           if(hid.getSplit()){
-              System.out.println("In Split's if");
-              courier.stay(hid);
+              splitPlay(hand);
               break;
           }
-          System.out.println("Not in splits if");
-          // quick hack
-          hid.setSplit(true);
         courier.split(hid);
+        hid.setSplit(true);
         break;
       
       case DOUBLE_DOWN:
@@ -576,29 +571,25 @@ public class MyClientBot implements ILogan {
     @Override
     public void split(Hid newHid, Hid origHid) {
         
+        // Ensure each HID knows it cannot be split
+        newHid.setSplit(true);
+        origHid.setSplit(true);
+        
+        // Get the original hand for updating
         Hand origHand = hands.get(origHid);
         
+        // create a new hand from splitting old hand
         Hand newHand = origHand.split(newHid);
+        newHand.getHid().setSplit(true);
         
-        hands.put(newHid, newHand);
+        // Remove the old hand from map
+        this.hands.remove(origHid);
         
-//        // The cards would be helpful....
-//        // Maybe not, deal looks to handle it?
-//        hands.put(newHid, new Hand(newHid));
-//        
-//        // I can probably do away with the variable ... 
-//        split = true;
-//        
-//        // Get and remove the original hand
-//        Hand origHand = hands.remove(origHid);
-//        
-//        // Let us create a new hand from origHid this will replace
-//        Hand replaceHand = new Hand(origHid);
-//        
-//        // Hid the new hand with the first card
-//        replaceHand.hit(origHand.getCard(0));
-//        
-//        // Add the new hand
-//        hands.put(origHid, replaceHand);
+        // Add the updated hand back into map
+        origHand.getHid().setSplit(true); // <-- interesting...
+        this.hands.put(origHid, origHand);
+        
+        // Add the new hand back into map
+        this.hands.put(newHid, newHand);
     }
 }
