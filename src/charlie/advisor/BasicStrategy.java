@@ -8,12 +8,16 @@ import charlie.card.Card;
 import charlie.card.Hand;
 import charlie.plugin.IAdvisor;
 import charlie.util.Play;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
  * @author Muro
  */
 public class BasicStrategy implements IAdvisor {
+    
+    protected Logger logger = LoggerFactory.getLogger(BasicStrategy.class);
     
     private static final Play H = Play.HIT;
     private static final Play S = Play.STAY;
@@ -58,9 +62,12 @@ public class BasicStrategy implements IAdvisor {
     @Override
     public Play advise(Hand myHand, Card upCard) {
         
-        System.out.println("Hand Size is now: " + myHand.size());
+        // Some logging to see what the basic strategy is doing for testing
+        logger.info("Hand size is now: " + myHand.size());
+        
+        // I want to see the cards in the hand, so loop then display log
         for(int i = 0; i < myHand.size(); i++){
-            System.out.println("Card " + i + ": " + myHand.getCard(i));
+            logger.info("Card " + i + ": " + myHand.getCard(i));
         }
         
         Play lookupResult = null;
