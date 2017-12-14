@@ -163,12 +163,14 @@ public class MySimpleBot implements ILogan {
         // Determine if it is our turn.
         if (hid.getSeat() == Seat.YOU) {
             
-            // Let us try this little hackity hack
+            // Need to get the hand.
             Hand hand = hands.get(hid);
-            if(hand.size() >= 5){
-                myTurn = false;
-                return; // or do we break?
-            }
+            
+            // Commented this out as it's a bandage fix.
+//            if(hand.size() >= 5){
+//                myTurn = false;
+//                return; // or do we break?
+//            }
             
             // enable flag indicating that it is our turn
             myTurn = true;
